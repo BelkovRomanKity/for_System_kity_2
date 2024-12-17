@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Практична - Шифрування Даних</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            width: 90%;
+            margin: 0 auto;
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        input, button {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Авторизація -->
+    <div id="login-page" class="container">
+        <h1>Авторизація</h1>
+        <input type="text" id="username" placeholder="Ім'я користувача">
+        <input type="password" id="password" placeholder="Пароль">
+        <button id="login-button">Увійти</button>
+        <p id="login-error" style="color: red; display: none;">Невірні дані</p>
+    </div>
+
+    <!-- Сторінка адміністратора -->
+    <div id="admin-page" class="container hidden">
+        <h2>Сторінка Адміністратора</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Користувач</th>
+                    <th>Пароль</th>
+                </tr>
+            </thead>
+            <tbody id="users-table">
+            </tbody>
+        </table>
+        <button id="logout-admin">Вийти</button>
+    </div>
+
+    <!-- Сторінка користувача -->
+    <div id="user-page" class="container hidden">
+        <h2>Сторінка Користувача</h2>
+        <p>Симетричне шифрування використовує один ключ для шифрування і дешифрування даних.</p>
+        <button id="logout-user">Вийти</button>
+    </div>
+
+    <script>
+        document.getElementById('login-button').addEventListener('click', async () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('http://localhost:3000/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.role === 'admin') {
+                        showPage('admin-page');
+                        populateTable();
+                    } else {
+                        showPage('user-page');
+                    }
+                } else {
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        // Вихід
+        document.getElementById('logout-admin').addEventListener('click', () => showPage('login-page'));
+        document.getElementById('logout-user').addEventListener('click', () => showPage('login-page'));
+
+        function showPage(pageId) {
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('admin-page').classList.add('hidden');
+            document.getElementById('user-page').classList.add('hidden');
+            document.getElementById(pageId).classList.remove('hidden');
+        }
+
+        function populateTable() {
+            fetch('http://localhost:3000/admin/users')
+                .then(response => response.json())
+                .then(users => {
+                    const tableBody = document.getElementById('users-table');
+                    tableBody.innerHTML = '';
+                    users.forEach(user => {
+                        const row = `<tr><td>${user.username}</td><td>${user.password}</td></tr>`;
+                        tableBody.innerHTML += row;
+                    });
+                })
+                .catch(error => console.error('Error fetching users:', error));
+        }
+    </script>
+</body>
+</html>
